@@ -197,6 +197,7 @@ class GraphExtractor:
             - output - unipartite graph in graphML format
         """
         graph = nx.Graph()
+
         for source_doc_id, extracted_data in results.items():
             records = [r.strip() for r in extracted_data.split(record_delimiter)]
 
@@ -214,19 +215,23 @@ class GraphExtractor:
                         node = graph.nodes[entity_name]
                         if self._join_descriptions:
                             node["description"] = "\n".join(
-                                list({
-                                    *_unpack_descriptions(node),
-                                    entity_description,
-                                })
+                                list(
+                                    {
+                                        *_unpack_descriptions(node),
+                                        entity_description,
+                                    }
+                                )
                             )
                         else:
                             if len(entity_description) > len(node["description"]):
                                 node["description"] = entity_description
                         node["source_id"] = ", ".join(
-                            list({
-                                *_unpack_source_ids(node),
-                                str(source_doc_id),
-                            })
+                            list(
+                                {
+                                    *_unpack_source_ids(node),
+                                    str(source_doc_id),
+                                }
+                            )
                         )
                         node["entity_type"] = (
                             entity_type if entity_type != "" else node["entity_type"]
@@ -273,16 +278,20 @@ class GraphExtractor:
                             weight += edge_data["weight"]
                             if self._join_descriptions:
                                 edge_description = "\n".join(
-                                    list({
-                                        *_unpack_descriptions(edge_data),
-                                        edge_description,
-                                    })
+                                    list(
+                                        {
+                                            *_unpack_descriptions(edge_data),
+                                            edge_description,
+                                        }
+                                    )
                                 )
                             edge_source_id = ", ".join(
-                                list({
-                                    *_unpack_source_ids(edge_data),
-                                    str(source_doc_id),
-                                })
+                                list(
+                                    {
+                                        *_unpack_source_ids(edge_data),
+                                        str(source_doc_id),
+                                    }
+                                )
                             )
                     graph.add_edge(
                         source,
@@ -291,6 +300,52 @@ class GraphExtractor:
                         description=edge_description,
                         source_id=edge_source_id,
                     )
+
+        for source_doc_id, extracted_data in results.items():
+            records = [r.strip() for r in extracted_data.split(record_delimiter)]
+
+            for record in records:
+                record = re.sub(r"^\(|\)$", "", record.strip())
+                record_attributes = record.split(tuple_delimiter)
+
+                if record_attributes[0] == '"origin"' and len(record_attributes) >= 4:
+                    # origin_id = "ORIGIN:" + clean_str(record_attributes[1].upper())
+                    origin_id = clean_str(record_attributes[1].upper())
+                    origin_type = clean_str(record_attributes[2].upper())
+                    origin_items = {
+                        clean_str(item.upper()) for item in record_attributes[3:]
+                    }
+
+                    # if (
+                    #     len(origin_items) == 1
+                    #     and "*" in next(iter(origin_items))
+                    #     and len(next(iter(origin_items))) < len('"*"')
+                    # ):
+                    #     origin_items = set(graph.nodes())
+
+                    if origin_id not in graph.nodes():
+                        # origin_node = graph.nodes[origin_id]
+                        graph.add_node(
+                            origin_id,
+                            type=origin_type,
+                            description="",  # TODO
+                            source_id=clean_str(str(source_doc_id)),
+                        )
+
+                    # add relationships to all nodes
+                    for origin_item in origin_items:
+                        if origin_item in graph.nodes() and not graph.has_edge(
+                            origin_id, origin_item
+                        ):
+                            # origin_child = graph.nodes[origin_item]
+                            graph.add_edge(
+                                origin_id,
+                                origin_item,
+                                weight=1.0,  # ?
+                                # type="INCLUDE",  # ?
+                                description="",
+                                source_id=clean_str(str(source_doc_id)),
+                            )
 
         return graph
 

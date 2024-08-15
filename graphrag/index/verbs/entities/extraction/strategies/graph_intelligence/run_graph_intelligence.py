@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Microsoft Corporation.
 # Licensed under the MIT License
 
-"""A module containing run_gi,  run_extract_entities and _create_text_splitter methods to run graph intelligence."""
+"""A module containing run_gi, run_extract_entities and _create_text_splitter methods to run graph intelligence."""
 
 import networkx as nx
 from datashaper import VerbCallbacks
@@ -98,12 +98,14 @@ async def run_extract_entities(
     graph = results.output
     # Map the "source_id" back to the "id" field
     for _, node in graph.nodes(data=True):  # type: ignore
+        print("node", node)
         if node is not None:
             node["source_id"] = ",".join(
                 docs[int(id)].id for id in node["source_id"].split(",")
             )
 
     for _, _, edge in graph.edges(data=True):  # type: ignore
+        print("edge", edge)
         if edge is not None:
             edge["source_id"] = ",".join(
                 docs[int(id)].id for id in edge["source_id"].split(",")

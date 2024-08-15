@@ -1,0 +1,48 @@
+{
+  "input": {
+    "file_type": "csv",
+    "source_column": "user",
+    "timestamp_column": "ts",
+    "text_column": "message",
+    "timestamp_format": "%Y%m%d%H%M%S"
+  },
+  "llm": {
+    "model": "gpt-4o",
+    "api_key": "${GRAPHRAG_API_KEY}",
+    "type": "openai_chat"
+  },
+  "embedding": {
+    "model": "text-embedding-3-small",
+    "api_key": "${GRAPHRAG_API_KEY}",
+    "type": "openai_embedding"
+  },
+  "parallelization": {
+    "num_threads": 2000
+  },
+  "entity_extraction": {
+    "prompt": "prompts/entity_extraction.txt",
+    "entity_types": [
+      "person",
+      "project",
+      "publication",
+      "topic",
+      "concept",
+      "dataset",
+      "tool",
+      "keyword",
+      "result",
+      "requirement",
+      "documentation",
+      "artifact",
+      "event",
+      "geo",
+      "time",
+      "organization",
+      "file"
+    ]
+  },
+  "claim_extraction": {
+    "enabled": true,
+    "description": "Any claims or facts that could be relevant to how different concepts, papers, theories, etc. that are related to each other in a research process."
+  }
+}

@@ -1,0 +1,160 @@
+
+-Goal-
+Given a text document that is potentially relevant to this activity and a list of entity types, identify all entities of those types from the text and all relationships among the identified entities.
+ 
+-Steps-
+1. Identify all entities. For each identified entity, extract the following information:
+- entity_name: Name of the entity, capitalized
+- entity_type: One of the following types: [{entity_types}]
+- entity_description: Comprehensive description of the entity's attributes and activities
+ Format each entity as ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>)
+ 
+2. From the entities identified in step 1, identify all pairs of (source_entity, target_entity) that are *clearly related* to each other
+ For each pair of related entities, extract the following information:
+- source_entity: Name of the source entity, as identified in step 1
+- target_entity: Name of the target entity, as identified in step 1
+- relationship_description: Explanation as to why you think the source entity and the target entity are related to each other
+- relationship_strength: A numeric score indicating strength of the relationship between the source entity and target entity
+ Format each relationship as ("relationship"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_description>{tuple_delimiter}<relationship_strength>)
+ 
+3. Identify the origin of entities, extract the following information:
+- origin_identifier: The identifier of the origin of the extracted entities
+ * For chat messages, the identifier is the timestamp of each message
+ * For files, like publications, the identifier is the URI
+- origin_type: The type of the origin, can be MESSAGE, FILE
+ Format each origin as ("origin"{tuple_delimiter}<origin_identifier>{tuple_delimiter}<souce_type>{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_name> ...)
+
+4. Return output in English as a single list of all the entities, relationships, origins identified in steps 1, 2, and 3. Use **{record_delimiter}** as the list delimiter
+ 
+5. When finished, output {completion_delimiter}
+
+-Special Requirements and Explanation-
+1. The first line of each document specifies the type of the document
+
+2. For chat messages, don't extract the timestamps as an entity
+ For each relationship extracted from the chat messages, add the timestamp at the end of the relationship description
+ For files and links in the messages, extract the DOI (or URI) as the title
+
+######################
+-Examples-
+######################
+Example 1:
+Entity_types: PERSON,PROJECT,PUBLICATION,TOPIC,CONCEPT,DATASET,TOOL,KEYWORD,RESULT,REQUIREMENT,DOCUMENTATION,ARTIFACT,EVENT,GEO,TIME,ORGANIZATION,FILE
+Text:
+# CHAT MESSAGES
+
+[1680112813] James: I think this paper is pretty relevant <PDF{tuple_delimiter}Webstrates: Shareable Dynamic Media{tuple_delimiter}10.1145/2807442.2807446{tuple_delimiter}J9YXOSG9GWXE3UAS>
+
+[1680112884] Jane: I have read this before. It's a really good one. The related works is pretty strong - maybe we can follow their style?
+
+[1680113954] John: Why not.
+
+[1680114727] James: <@John> Can you try to draft the related works section for us?
+######################
+Output:
+("entity"{tuple_delimiter}JAMES{tuple_delimiter}PERSON{tuple_delimiter}James is a participant in the chat discussing a relevant paper and asking John to draft the related works section)
+{record_delimiter}
+("entity"{tuple_delimiter}JANE{tuple_delimiter}PERSON{tuple_delimiter}Jane is a participant in the chat who has read the paper before and finds it to be a good one with strong related works)
+{record_delimiter}
+("entity"{tuple_delimiter}JOHN{tuple_delimiter}PERSON{tuple_delimiter}John is a participant in the chat who is asked by James to draft the related works section)
+{record_delimiter}
+("entity"{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}PUBLICATION{tuple_delimiter}A paper that is considered relevant and has a strong related works section)
+{record_delimiter}
+("entity"{tuple_delimiter}10.1145/2807442.2807446{tuple_delimiter}PUBLICATION{tuple_delimiter}The DOI of the paper "Webstrates: Shareable Dynamic Media")
+{record_delimiter}
+("entity"{tuple_delimiter}J9YXOSG9GWXE3UAS{tuple_delimiter}FILE{tuple_delimiter}The URI of the PDF file for the paper "Webstrates: Shareable Dynamic Media" shared by James)
+{record_delimiter}
+("entity"{tuple_delimiter}RELATED WORKS{tuple_delimiter}DOCUMENTATION{tuple_delimiter}A section in a research paper, which of the paper Webstrates is considered strong by Jane)
+{record_delimiter}
+("relationship"{tuple_delimiter}JAMES{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}James finds the paper to be relevant [1680112813]{tuple_delimiter}6)
+{record_delimiter}
+("relationship"{tuple_delimiter}JANE{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}Jane has read the paper before and finds it to be a good one [1680112884]{tuple_delimiter}7)
+{record_delimiter}
+("relationship"{tuple_delimiter}JANE{tuple_delimiter}RELATED WORKS{tuple_delimiter}Jane thinks the related works section of the Webstrates paper is strong, and they should follow the style of it [1680112884]{tuple_delimiter}8)
+{record_delimiter}
+("relationship"{tuple_delimiter}JAMES{tuple_delimiter}JOHN{tuple_delimiter}James asked John to draft the related works section of their paper [1680114727]{tuple_delimiter}7)
+{record_delimiter}
+("relationship"{tuple_delimiter}JOHN{tuple_delimiter}RELATED WORKS{tuple_delimiter}John is asked to draft the related works section of their paper [1680114727]{tuple_delimiter}8)
+{record_delimiter}
+("origin"{tuple_delimiter}1680112813{tuple_delimiter}MESSAGE{tuple_delimiter}JAMES{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}10.1145/2807442.2807446{tuple_delimiter}J9YXOSG9GWXE3UAS)
+{record_delimiter}
+("origin"{tuple_delimiter}1680112884{tuple_delimiter}MESSAGE{tuple_delimiter}JANE{tuple_delimiter}RELATED WORKS)
+{record_delimiter}
+("origin"{tuple_delimiter}1680113954{tuple_delimiter}MESSAGE{tuple_delimiter}JOHN)
+{record_delimiter}
+("origin"{tuple_delimiter}1680114727{tuple_delimiter}MESSAGE{tuple_delimiter}JAMES{tuple_delimiter}RELATED WORKS)
+{completion_delimiter}
+
+######################
+Example 2:
+Entity_types: PERSON,PROJECT,PUBLICATION,TOPIC,CONCEPT,DATASET,TOOL,KEYWORD,RESULT,REQUIREMENT,DOCUMENTATION,ARTIFACT,EVENT,GEO,TIME,ORGANIZATION,FILE
+Text:
+# PUBLICATION
+
+File URI: J9YXOSG9GWXE3UAS
+Title: Webstrates: Shareable Dynamic Media
+DOI: 10.1145/2807442.2807446
+Authors: Clemens N. Klokmose, James R. Eagan, Siemen Baader, Wendy Mackay, Michel Beaudouin-Lafon
+Abstract: We revisit Alan Kay's early vision of dynamic media that blurs the distinction between documents and applications. We introduce shareable dynamic media that are malleable by users, who may appropriate them in idiosyncratic ways; shareable among users, who collaborate on multiple aspects of the media; and distributable across diverse devices and platforms. We present Webstrates, an environment for exploring shareable dynamic media. Webstrates augment web technology with real-time sharing. They turn web pages into substrates, i.e. software entities that act as applications or documents depending upon use. We illustrate Webstrates with two implemented case studies: users collaboratively author an article with functionally and visually different editors that they can personalize and extend at run-time; and they orchestrate its presentation and audience participation with multiple devices. We demonstrate the simplicity and generative power of Webstrates with three additional prototypes and evaluate it from a systems perspective.
+######################
+Output:
+("entity"{tuple_delimiter}WEBSTRATES{tuple_delimiter}TOOL{tuple_delimiter}Webstrates is an environment for exploring shareable dynamic media, augmenting web technology with real-time sharing and turning web pages into substrates that act as applications or documents depending upon use)
+{record_delimiter}
+("entity"{tuple_delimiter}CLEMENS N. KLOKMOSE{tuple_delimiter}PERSON{tuple_delimiter}Clemens N. Klokmose is one of the authors of the publication "Webstrates: Shareable Dynamic Media")
+{record_delimiter}
+("entity"{tuple_delimiter}JAMES R. EAGAN{tuple_delimiter}PERSON{tuple_delimiter}James R. Eagan is one of the authors of the publication "Webstrates: Shareable Dynamic Media")
+{record_delimiter}
+("entity"{tuple_delimiter}SIEMEN BAADER{tuple_delimiter}PERSON{tuple_delimiter}Siemen Baader is one of the authors of the publication "Webstrates: Shareable Dynamic Media")
+{record_delimiter}
+("entity"{tuple_delimiter}WENDY MACKAY{tuple_delimiter}PERSON{tuple_delimiter}Wendy Mackay is one of the authors of the publication "Webstrates: Shareable Dynamic Media")
+{record_delimiter}
+("entity"{tuple_delimiter}MICHEL BEAUDOUIN-LAFON{tuple_delimiter}PERSON{tuple_delimiter}Michel Beaudouin-Lafon is one of the authors of the publication "Webstrates: Shareable Dynamic Media")
+{record_delimiter}
+("entity"{tuple_delimiter}ALAN KAY{tuple_delimiter}PERSON{tuple_delimiter}Alan Kay is referenced in the publication for his early vision of dynamic media that blurs the distinction between documents and applications)
+{record_delimiter}
+("entity"{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}PUBLICATION{tuple_delimiter}The publication introduces Webstrates, an environment for exploring shareable dynamic media, and presents case studies and prototypes to demonstrate its capabilities)
+{record_delimiter}
+("entity"{tuple_delimiter}10.1145/2807442.2807446{tuple_delimiter}PUBLICATION{tuple_delimiter}The DOI of the paper "Webstrates: Shareable Dynamic Media")
+{record_delimiter}
+("entity"{tuple_delimiter}DYNAMIC MEDIA{tuple_delimiter}CONCEPT{tuple_delimiter}Dynamic media is a concept that blurs the distinction between documents and applications, allowing for malleable, shareable, and distributable media)
+{record_delimiter}
+("entity"{tuple_delimiter}CASE STUDIES{tuple_delimiter}DOCUMENTATION{tuple_delimiter}The publication includes two implemented case studies illustrating the use of Webstrates for collaborative authoring and orchestrating presentations with multiple devices)
+{record_delimiter}
+("entity"{tuple_delimiter}PROTOTYPES{tuple_delimiter}ARTIFACT{tuple_delimiter}The publication demonstrates the simplicity and generative power of Webstrates with three additional prototypes)
+{record_delimiter}
+("entity"{tuple_delimiter}SYSTEMS PERSPECTIVE{tuple_delimiter}CONCEPT{tuple_delimiter}The publication evaluates Webstrates from a systems perspective)
+{record_delimiter}
+("relationship"{tuple_delimiter}CLEMENS N. KLOKMOSE{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}Clemens N. Klokmose is one of the authors, and the fisrt author, of the publication{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}JAMES R. EAGAN{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}James R. Eagan is one of the authors of the publication{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}SIEMEN BAADER{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}Siemen Baader is one of the authors of the publication{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}WENDY MACKAY{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}Wendy Mackay is one of the authors of the publication{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}MICHEL BEAUDOUIN-LAFON{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}Michel Beaudouin-Lafon is one of the authors, and the last author, of the publication{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}ALAN KAY{tuple_delimiter}DYNAMIC MEDIA{tuple_delimiter}Alan Kay is referenced for his early vision of dynamic media{tuple_delimiter}7)
+{record_delimiter}
+("relationship"{tuple_delimiter}WEBSTRATES{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}Webstrates is the main subject of the publication{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}DYNAMIC MEDIA{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}The publication revisits the concept of dynamic media{tuple_delimiter}8)
+{record_delimiter}
+("relationship"{tuple_delimiter}CASE STUDIES{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}The publication includes case studies to illustrate the use of Webstrates{tuple_delimiter}8)
+{record_delimiter}
+("relationship"{tuple_delimiter}PROTOTYPES{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}The publication demonstrates Webstrates with three additional prototypes{tuple_delimiter}8)
+{record_delimiter}
+("relationship"{tuple_delimiter}SYSTEMS PERSPECTIVE{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}The publication evaluates Webstrates from a systems perspective{tuple_delimiter}7)
+{record_delimiter}
+("relationship"{tuple_delimiter}10.1145/2807442.2807446{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}The DOI is the unique identifier for the paper "Webstrates: Shareable Dynamic Media"{tuple_delimiter}10)
+{record_delimiter}
+("origin"{tuple_delimiter}J9YXOSG9GWXE3UAS{tuple_delimiter}FILE{tuple_delimiter}WEBSTRATES{tuple_delimiter}CLEMENS N. KLOKMOSE{tuple_delimiter}JAMES R. EAGAN{tuple_delimiter}SIEMEN BAADER{tuple_delimiter}WENDY MACKAY{tuple_delimiter}MICHEL BEAUDOUIN-LAFON{tuple_delimiter}ALAN KAY{tuple_delimiter}WEBSTRATES: SHAREABLE DYNAMIC MEDIA{tuple_delimiter}10.1145/2807442.2807446{tuple_delimiter}DYNAMIC MEDIA{tuple_delimiter}CASE STUDIES{tuple_delimiter}PROTOTYPES{tuple_delimiter}SYSTEMS PERSPECTIVE)
+{completion_delimiter}
+
+######################
+-Real Data-
+######################
+Entity_types: {entity_types}
+Text: {input_text}
+######################
+Output:
